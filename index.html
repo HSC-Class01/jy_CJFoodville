@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CJ푸드빌 재무분석</title>
+<style>
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f5f7fb}
+body{margin:0}.wrap{max-width:1180px;margin:auto;padding:32px 20px 56px}
+header{background:#fff;border:1px solid #e3e8f0;border-radius:18px;padding:28px;margin-bottom:20px}
+h1{margin:0 0 8px;font-size:30px}.sub{color:#687386}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}
+.card{background:#fff;border:1px solid #e3e8f0;border-radius:14px;padding:18px}
+.label{font-size:13px;color:#687386}.value{font-size:25px;font-weight:750;margin-top:6px}
+section{background:#fff;border:1px solid #e3e8f0;border-radius:18px;padding:22px;margin:18px 0;overflow:auto}
+h2{font-size:20px;margin:0 0 16px}
+table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:11px 10px;border-bottom:1px solid #edf0f5;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}th{font-size:13px;color:#687386;background:#fafbfc}
+.note{font-size:13px;color:#687386;line-height:1.65}
+footer{font-size:12px;color:#7a8494;margin-top:20px}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>CJ푸드빌 재무분석</h1>
+<div class="sub">연결 기준 · 2022~2025년 · 금액 단위: 백만원 · 분석 기준일 2026-09-21</div>
+</header>
+<div class="grid" id="cards"></div>
+<section>
+<h2>주요 재무제표</h2>
+<table><thead><tr><th>연도</th><th>매출액</th><th>영업이익</th><th>당기순이익</th><th>총자산</th><th>총부채</th><th>자본총계</th></tr></thead><tbody id="financial"></tbody></table>
+</section>
+<section>
+<h2>주요 재무비율</h2>
+<table><thead><tr><th>연도</th><th>매출증가율</th><th>영업이익률</th><th>순이익률</th><th>부채비율</th><th>자기자본비율</th><th>ROA</th><th>ROE</th></tr></thead><tbody id="ratios"></tbody></table>
+</section>
+<section>
+<h2>핵심 해석</h2>
+<p class="note">2025년 매출은 1,020,619백만원으로 2024년보다 12.3% 증가했습니다. 영업이익은 50,100백만원으로 영업이익률은 4.91%이며, 순이익은 38,300백만원으로 순이익률은 3.75%입니다. 2025년 자기자본비율은 34.33%, 부채비율은 191.26%입니다.</p>
+<p class="note">ROA와 ROE는 연평균 자산·자본을 사용해 계산했습니다. 2022년은 2021년 기초값이 제공되지 않아 ROA·ROE를 표시하지 않습니다.</p>
+</section>
+<section>
+<h2>자료 및 산식</h2>
+<p class="note">재무자료: CJ푸드빌 공개자료 및 공시자료를 교차 확인하여 입력한 연결 기준 데이터입니다. 매출증가율=(당기 매출−전기 매출)/전기 매출×100, 영업이익률=영업이익/매출×100, 순이익률=당기순이익/매출×100, 부채비율=총부채/자본총계×100, 자기자본비율=자본총계/총자산×100입니다.</p>
+<p class="note">상세 분석과 출처는 저장소의 financial_analysis.md 및 sources.md를 참조하세요.</p>
+</section>
+<footer>본 대시보드는 공개자료 기반의 분석용 화면이며 투자판단의 직접적인 근거로 사용해서는 안 됩니다.</footer>
+</div>
+<script>
+const d=[
+[2022,759800,26100,28500,463000,432300,30700],
+[2023,844654,45300,35800,532200,399400,132800],
+[2024,909205,55600,47800,526500,339300,187200],
+[2025,1020619,50100,38300,639600,420000,219600]
+];
+const n=x=>x.toLocaleString("ko-KR");
+document.getElementById("financial").innerHTML=d.map(r=>"<tr>"+r.map((x,i)=>"<td>"+(i?n(x):x)+"</td>").join("")+"</tr>").join("");
+document.getElementById("ratios").innerHTML=d.map((r,i)=>{
+ const growth=i?((r[1]/d[i-1][1]-1)*100):null, op=r[2]/r[1]*100, net=r[3]/r[1]*100, debt=r[5]/r[6]*100, eq=r[6]/r[4]*100;
+ let roa=null,roe=null;if(i){roa=r[3]/((r[4]+d[i-1][4])/2)*100;roe=r[3]/((r[6]+d[i-1][6])/2)*100}
+ const vals=[growth,op,net,debt,eq,roa,roe].map(x=>x==null?"-":x.toFixed(2)+"%");
+ return "<tr><td>"+r[0]+"</td>"+vals.map(x=>"<td>"+x+"</td>").join("")+"</tr>"
+}).join("");
+const y=d[d.length-1];
+document.getElementById("cards").innerHTML=[
+["2025 매출",n(y[1])+" 백만원"],["2025 영업이익",n(y[2])+" 백만원"],["영업이익률",((y[2]/y[1])*100).toFixed(2)+"%"],["자기자본비율",((y[6]/y[4])*100).toFixed(2)+"%"]
+].map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join("");
+</script>
+</body>
+</html>
