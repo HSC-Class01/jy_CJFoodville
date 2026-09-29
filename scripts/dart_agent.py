@@ -43,7 +43,10 @@ def filings(corp,start):
             d=api("list",{"corp_code":corp,"bgn_de":f"{y}0101","end_de":f"{y}1231","page_no":1,"page_count":100})
             out += [x for x in d.get("list",[]) if any(k in x.get("report_nm","") for k in ("사업보고서","반기보고서","분기보고서"))]
         except Exception as e: out.append({"bsns_year":str(y),"status":"ERROR","message":str(e)})
-    return sorted({x.get("rcept_no"):x for x in out if x.get("rcept_no")}.values(),key=lambda x:(x.get("rcept_dt",""),x.get("rcept_no","")))
+    items=sorted({x.get("rcept_no"):x for x in out if x.get("rcept_no")}.values(),key=lambda x:(x.get("rcept_dt",""),x.get("rcept_no","")))
+    for x in items:
+        if x.get("rcept_no"): x["dart_url"]=f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={x['rcept_no']}"
+    return items
 def financial(corp,year,code):
     for fs in ("CFS","OFS"):
         try:
@@ -72,11 +75,14 @@ def add_ratios(rows):
         prev=r.copy()
 def write(path,rows,fields):
     path.parent.mkdir(parents=True,exist_ok=True)
-    with path.open("w",newline="",encoding="utf-8-sig") as f: csv.DictWriter(f,fieldnames=fields).writeheader(); csv.DictWriter(f,fieldnames=fields).writerows(rows)
+    with path.open("w",newline="",encoding="utf-8-sig") as f:
+        w=csv.DictWriter(f,fieldnames=fields); w.writeheader(); w.writerows(rows)
 def main():
     cfg=json.loads(CFG.read_text(encoding="utf-8")); corp=cfg["corp_code"]; start=int(cfg.get("start_year",2010))
     RAW.mkdir(parents=True,exist_ok=True); OUT.mkdir(parents=True,exist_ok=True)
-    fs=filings(corp,start); (RAW/"filings.json").write_text(json.dumps({"updated_at":date.today().isoformat(),"corp_code":corp,"reports":fs},ensure_ascii=False,indent=2),encoding="utf-8")
+    fs=filings(corp,start)
+    (RAW/"filings.json").write_text(json.dumps({"updated_at":date.today().isoformat(),"corp_code":corp,"reports":fs},ensure_ascii=False,indent=2),encoding="utf-8")
+    write(RAW/"filings.csv",fs,["rcept_no","rcept_dt","corp_code","corp_name","report_nm","reporter","dart_url"])
     rows=[]
     for y in range(max(start,2015),date.today().year+1):
         for p,code in REPORTS.items():
