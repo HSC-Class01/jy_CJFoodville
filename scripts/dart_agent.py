@@ -81,6 +81,8 @@ def main():
     cfg=json.loads(CFG.read_text(encoding="utf-8")); corp=cfg["corp_code"]; start=int(cfg.get("start_year",2010))
     RAW.mkdir(parents=True,exist_ok=True); OUT.mkdir(parents=True,exist_ok=True)
     fs=filings(corp,start)
+    if not fs:
+        raise RuntimeError("OpenDART returned no CJ푸드빌 filings. Existing datasets were not overwritten.")
     (RAW/"filings.json").write_text(json.dumps({"updated_at":date.today().isoformat(),"corp_code":corp,"reports":fs},ensure_ascii=False,indent=2),encoding="utf-8")
     write(RAW/"filings.csv",fs,["rcept_no","rcept_dt","corp_code","corp_name","report_nm","reporter","dart_url"])
     rows=[]
@@ -91,6 +93,8 @@ def main():
             prefix={"annual":"사업보고서","half_year":"반기보고서","q1":"1분기보고서","q3":"3분기보고서"}[p]
             ms=[x for x in fs if x.get("rcept_no") and x.get("report_nm","").startswith(prefix) and str(x.get("bsns_year",y))==str(y)]
             rows.append(make_row(y,{"annual":"Annual","half_year":"Half-year","q1":"Q1","q3":"Q3"}[p],code,ms[-1] if ms else {},data,fsdiv))
+    if not rows:
+        raise RuntimeError("OpenDART returned no financial statement rows from 2015 onward. Existing datasets were not overwritten.")
     add_ratios(rows)
     base=["year","period","report_code","filing_no","filing_date","fs_div"]+list(ALIASES)
     rf=["sales_growth_pct","operating_margin_pct","net_margin_pct","debt_ratio_pct","equity_ratio_pct","current_ratio_pct","quick_ratio_pct","roa_pct","roe_pct","interest_coverage"]
